@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>Dress-Up Game</title>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="three_scroll_bar_style.css">
+  <link rel="stylesheet" href="scroll.css">
+
+  <style>
+    /* Loading screen */
+    #loading-screen {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 20px;
+      z-index: 9999;
+      opacity: 1;
+      transition: opacity 1.5s ease;
+    }
+
+    .spinner {
+      border: 6px solid #ccc;
+      border-top: 6px solid #09f;
+      border-radius: 50%;
+      width: 50px; height: 50px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+
+    #loading-screen.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Base container fallback */
+    .base-container img {
+      max-width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    /* Reduce jank on mobile */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    button {
+      will-change: transform;
+    }
+  </style>
+</head>
+<body>
+  <!-- 🌀 Loading Screen -->
+  <div id="loading-screen">
+    <div class="spinner"></div>
+    <div id="loading-message">Loading...</div>
+    <div id="loading-time"></div>
+    <div id="loading-countdown"></div>
+  </div>
+
+  <!-- 🕹 Main Menu -->
+  <div class="main-menu" style="display: none;">
+    <img src="Mainmenu.png" alt="Main Menu Image" />
+    <button onclick="enterGame()">Play</button>
+  </div>
+
+  <!-- 🧍 Game Content -->
+  <div class="game-container">
+    <div class="base-container">
+      <img id="base-image" src="Base.png" alt="Base Image">
+      <img id="base2-image" src="Base2.png" alt="Base 2" style="display: none;">
+      <img id="base3-image" src="Base3.png" alt="Base 3" style="display: none;">
+      <img id="base4-image" src="Base4.png" alt="Base 4" style="display: none;">
+      <img id="base5-image" src="Base5.png" alt="Base 5" style="display: none;">
+
+      <button class="small-button button-1" onclick="changeToBase2()"></button>
+      <button class="small-button button-2" onclick="changeToBase3()"></button>
+      <button class="small-button button-3" onclick="changeToBase4()"></button>
+      <button class="small-button button-4" onclick="changeToBase5()"></button>
+      <button id="wind-button">🌬 Wind</button>
+    </div>
+
+    <!-- 🎛 Controls -->
+    <div class="controls">
+      <div class="combined-scroll-bar" id="presetScrollBar"></div>
+      <div class="combined-scroll-bar" id="categoryScrollBar"></div>
+      <div class="scrollable-buttons"></div>
+    </div>
+  </div>
+
+  <!-- 🔌 Scripts -->
+  <script src="script.js"></script>
+  <script src="load.js"></script>
+  <script src="preset.js"></script>
+  <script src="scrolls.js"></script>
+  <script src="fps-monitor.js"></script>
+</body>
+</html>
