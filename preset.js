@@ -14,7 +14,7 @@ const allCategories = [
 	'onepiece1', 'onepiece3', 'onepiece4',
 	'socks1', 'socks2', 'socks3', 'socks4',
 	'boxers1', 'boxers2', 'boxers3', 'boxers4',
-	'sweatshirt1', 'sweatshirt2', 'sweatshirt3', 'sweatshirt4', 'bodysuit4',
+	'sweatshirt1', 'sweatshirt2', 'sweatshirt3', 'sweatshirt4', 'bodysuit2',
 	'shoes1', 'shoes2', 'shoes3', 'shoes4',
 	'pants1', 'pants2', 'pants3', 'pants4',
 	'skirt1', 'skirt2', 'skirt3', 'skirt4',
@@ -25,60 +25,57 @@ const allCategories = [
 	'skirt1w', 'skirt2w', 'skirt3w', 'skirt4w',
 	'accessories1', 'accessories2', 'accessories3', 'accessories4',
 	'hat1', 'hat2', 'hat3', 'hat4',
-	'glove4', 'scarf4', 'leaf1'
+	'glove1', 'scarf4', 'leaf1'
 ];
 
 // ==== PRESET CONFIGURATION ====
 const presets = {
 	default: [
+		{ id: "hat3_1.png", category: "hat3" },
+		{ id: "dress3_1.png", category: "dress3" },
+		{ id: "hat1_1.png", category: "hat1" },
+		{ id: "glove1_1.png", category: "glove1" },
+		{ id: "dress1_1.png", category: "dress1" },
+		{ id: "socks1_1.png", category: "socks1" },
+		{ id: "scarf4_1.png", category: "scarf4" },
+		{ id: "top4_1.png", category: "top4" },
+		{ id: "pants4_1.png", category: "pants4" },
+		{ id: "bodysuit2_1.png", category: "bodysuit2" },
 		{ id: "bottomunderwear1_1.png", category: "bottomunderwear1" },
 		{ id: "bottomunderwear3_1.png", category: "bottomunderwear3" },
-		{ id: "bottomunderwear4_1.png", category: "bottomunderwear4" },
-
-		{ id: "topunderwear1_1.png", category: "topunderwear1" },
-		{ id: "topunderwear3_1.png", category: "topunderwear3" },
-		{ id: "topunderwear4_1.png", category: "topunderwear4" },
-
 		{ id: "boxers2_1.png", category: "boxers2" },
-
-		{ id: "socks1_1.png", category: "socks1" },
-		{ id: "socks2_1.png", category: "socks2" },
-		{ id: "socks4_1.png", category: "socks4" },
-
-		{ id: "shoes1_1.png", category: "shoes1" },
-		{ id: "shoes2_1.png", category: "shoes2" },
-		{ id: "shoes4_1.png", category: "shoes4" },
-
-		{ id: "hat1_1.png", category: "hat1" },
-		{ id: "hat4_1.png", category: "hat4" },
-
-		{ id: "skirt1_1.png", category: "skirt1" },
-		{ id: "skirt3_1.png", category: "skirt3" },
-
-		{ id: "top1_1.png", category: "top1" },
-		{ id: "top2_1.png", category: "top2" },
-
-		{ id: "pants2_1.png", category: "pants2" },
-		{ id: "jacket2_1.png", category: "jacket2" },
-
-		{ id: "bodysuit4_1.png", category: "bodysuit4" },
-		{ id: "glove4_1.png", category: "glove4" },
-		{ id: "scarf4_1.png", category: "scarf4" },
-
-		{ id: "leaf1_1.png", category: "leaf1" }
-	],
+		{ id: "boxers4_1.png", category: "boxers4" }
+	]
+,
 	underwear: [
 		{ id: "bottomunderwear1_1.png", category: "bottomunderwear1" },
 		{ id: "bottomunderwear3_1.png", category: "bottomunderwear3" },
-		{ id: "bottomunderwear4_1.png", category: "bottomunderwear4" },
+		
 
 		{ id: "topunderwear1_1.png", category: "topunderwear1" },
 		{ id: "topunderwear3_1.png", category: "topunderwear3" },
-		{ id: "topunderwear4_1.png", category: "topunderwear4" },
+		
 
-		{ id: "boxers2_1.png", category: "boxers2" }
-	]
+		{ id: "boxers2_1.png", category: "boxers2" },{ id: "boxers4_1.png", category: "boxers4" }
+	],
+  wedding: [
+    { id: "shoes3_1.png", category: "shoes3" },
+    { id: "shoes2_1.png", category: "shoes2" },
+    { id: "pants4_2.png", category: "pants4" },
+    { id: "pants2_1.png", category: "pants2" },
+    { id: "top4_2.png", category: "top4" },
+    { id: "top2_1.png", category: "top2" },
+    { id: "jacket4_1.png", category: "jacket4" },
+    { id: "jacket2_1.png", category: "jacket2" },
+    { id: "dress1_2.png", category: "dress1" },
+    { id: "dress3_2.png", category: "dress3" },
+	{ id: "bottomunderwear1_1.png", category: "bottomunderwear1" },
+		{ id: "bottomunderwear3_1.png", category: "bottomunderwear3" },
+		{ id: "boxers2_1.png", category: "boxers2" },
+		{ id: "boxers4_1.png", category: "boxers4" }
+  ]
 };
+
 
 // ==== PRESET HANDLER ====
 function applyPreset(presetName) {
