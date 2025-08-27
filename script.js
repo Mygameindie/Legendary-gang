@@ -7,7 +7,7 @@ const jsonFiles = [
 	'onepiece1.json', 'onepiece3.json', 'onepiece4.json',
 	'socks1.json', 'socks2.json', 'socks3.json', 'socks4.json',
 	'boxers1.json', 'boxers2.json', 'boxers3.json', 'boxers4.json',
-	'sweatshirt1.json', 'sweatshirt2.json', 'sweatshirt3.json', 'sweatshirt4.json', 'bodysuit4.json',
+	'sweatshirt1.json', 'sweatshirt2.json', 'sweatshirt3.json', 'sweatshirt4.json', 'bodysuit2.json',
 	'shoes1.json', 'shoes2.json', 'shoes3.json', 'shoes4.json',
 	'pants1.json', 'pants2.json', 'pants3.json', 'pants4.json',
 	'skirt1.json', 'skirt2.json', 'skirt3.json', 'skirt4.json',
@@ -17,7 +17,7 @@ const jsonFiles = [
 	'dress1w.json', 'dress2w.json', 'dress3w.json', 'dress4w.json',
 	'skirt1w.json', 'skirt2w.json', 'skirt3w.json', 'skirt4w.json',
 	'accessories1.json', 'accessories2.json', 'accessories3.json', 'accessories4.json',
-	'hat1.json', 'hat2.json', 'hat3.json', 'hat4.json', 'glove4.json', 'scarf4.json', 'leaf1.json'
+	'hat1.json', 'hat2.json', 'hat3.json', 'hat4.json', 'glove1.json', 'scarf4.json', 'leaf1.json'
 
 
 ];
@@ -218,6 +218,238 @@ function toggleVisibility(itemId, categoryName) {
 		}
 	}
 }
+// ===== EXACT NAMED-COLOR RECOLOR (per-pixel, preserves alpha) =====
+const NAMED_HUES = {
+  Original: null,
+  Red: 0, Orange: 30, Yellow: 60, Green: 120,
+  Cyan: 180, Blue: 240, Purple: 270, Pink: 320
+};
+
+const _recolorCache = new Map(); // key: itemId|ColorName -> dataURL
+
+function _rgbToHsl(r,g,b){
+  r/=255; g/=255; b/=255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if (max === min) { h = 0; s = 0; }
+  else {
+    const d = max - min;
+    s = l > 0.5 ? d/(2 - max - min) : d/(max + min);
+    switch (max) {
+      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+      case g: h = (b - r) / d + 2; break;
+      case b: h = (r - g) / d + 4; break;
+    }
+    h /= 6;
+  }
+  return [h*360, s, l];
+}
+
+function _hslToRgb(h,s,l){
+  h/=360;
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const hue2rgb = t => {
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1/6) return p + (q - p) * 6 * t;
+    if (t < 1/2) return q;
+    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+    return p;
+  };
+  const r = Math.round(hue2rgb(h + 1/3) * 255);
+  const g = Math.round(hue2rgb(h) * 255);
+  const b = Math.round(hue2rgb(h - 1/3) * 255);
+  return [r,g,b];
+}
+
+// Store original src once (so "Original" restores it)
+function _ensureOriginalSrc(img){
+  if (!img.dataset.originalSrc) {
+    img.dataset.originalSrc = img.src || img.dataset.src || '';
+  }
+}
+
+// Main API: set item to named color (true recolor)
+async function setItemNamedColor(itemId, colorName){
+  const el = document.getElementById(itemId);
+  if (!el) return;
+
+  // Restore original
+  if (!colorName || colorName === 'Original' || NAMED_HUES[colorName] == null) {
+    _ensureOriginalSrc(el);
+    const orig = el.dataset.originalSrc;
+    if (orig) el.src = orig;
+    el.style.filter = ''; // clear any old filters
+    return;
+  }
+
+  // Make sure the bitmap is loaded and CORS-safe for canvas
+  if (!el.src && el.dataset && el.dataset.src) el.src = el.dataset.src;
+  if (!el.crossOrigin) el.crossOrigin = 'anonymous';
+
+  await new Promise(res => {
+    if (el.complete && el.naturalWidth) res();
+    else el.onload = () => res();
+  });
+
+  const targetHue = NAMED_HUES[colorName];
+  const cacheKey = `${itemId}|${colorName}`;
+  if (_recolorCache.has(cacheKey)) {
+    el.src = _recolorCache.get(cacheKey);
+    el.style.filter = '';
+    return;
+  }
+
+  _ensureOriginalSrc(el);
+
+  // Draw and recolor pixels
+  const w = el.naturalWidth, h = el.naturalHeight;
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  try {
+    ctx.drawImage(el, 0, 0, w, h);
+  } catch (e) {
+    // CORS-tainted fallback: use hue-rotate as last resort
+    el.style.filter = `hue-rotate(${targetHue}deg) saturate(1.1)`;
+    return;
+  }
+
+  const imgData = ctx.getImageData(0, 0, w, h);
+  const d = imgData.data;
+
+  for (let i = 0; i < d.length; i += 4) {
+    const a = d[i+3];
+    if (a === 0) continue; // keep transparent pixels
+    const r = d[i], g = d[i+1], b = d[i+2];
+
+    // skip greys very near black/white to avoid nasty tints
+    const [hue, sat, light] = _rgbToHsl(r,g,b);
+    if (light < 0.03 || light > 0.97) continue;
+
+    // keep S/L, only set hue to target
+    const [nr, ng, nb] = _hslToRgb(targetHue, sat, light);
+    d[i] = nr; d[i+1] = ng; d[i+2] = nb;
+  }
+
+  ctx.putImageData(imgData, 0, 0);
+  const url = canvas.toDataURL('image/png');
+  _recolorCache.set(cacheKey, url);
+  el.src = url;
+  el.style.filter = '';
+}
+/* === Color Swatch Fixups (append only) === */
+(() => {
+  // 1) Bridge: some code reads window.currentlySelectedItem but it's declared with `let`.
+  try {
+    if (!('currentlySelectedItem' in window)) {
+      Object.defineProperty(window, 'currentlySelectedItem', {
+        get(){ try { return typeof currentlySelectedItem !== 'undefined' ? currentlySelectedItem : null; } catch(e){ return null; } },
+        set(v){ try { currentlySelectedItem = v; } catch(e) { /* no-op */ } }
+      });
+    }
+  } catch (e) { /* ignore */ }
+
+  // 2) Idempotent, safe createColorPicker (in case a later stub overwrote the real one)
+  function buildPickerOnce() {
+    if (document.querySelector('.color-picker-container')) return; // already built
+
+    const container = document.createElement('div');
+    container.className = 'color-picker-container';
+    container.style.display = 'none';
+
+    const title = document.createElement('h4');
+    title.textContent = 'Choose Color:';
+    container.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'color-grid';
+
+    // Use your existing palette so the swatch-upgrade can convert them to circles
+    (window.colorPalette || []).forEach(c => {
+      const btn = document.createElement('button');
+      btn.className = 'color-button';
+      btn.textContent = c.name;
+      // keep old behavior for fallback (CSS filter)
+      btn.onclick = () => window.applyColorToItem?.(c.value);
+      grid.appendChild(btn);
+    });
+
+    container.appendChild(grid);
+
+    const close = document.createElement('button');
+    close.className = 'close-color-picker';
+    close.textContent = 'Close';
+    close.onclick = () => window.hideColorPicker?.();
+    container.appendChild(close);
+
+    (document.querySelector('.controls') || document.body).appendChild(container);
+  }
+
+  // Replace/restore global createColorPicker to the safe one (append-only override).
+  window.createColorPicker = function() { buildPickerOnce(); };
+
+  // Build immediately if not present (covers the case where a stub ran earlier)
+  buildPickerOnce();
+})();
+// --- SAFE COLOR PICKER (null-safe + calls setItemNamedColor) ---
+function createColorPicker() {
+  // idempotent: only create once
+  if (document.querySelector('.color-picker-container')) return;
+
+  const container = document.createElement('div');
+  container.classList.add('color-picker-container');
+  container.style.display = 'none';
+
+  const title = document.createElement('h4');
+  title.textContent = 'Choose Color:';
+  container.appendChild(title);
+
+  const grid = document.createElement('div');
+  grid.classList.add('color-grid');
+  colorPalette.forEach(color => {
+    const btn = document.createElement('button');
+    btn.classList.add('color-button');
+    btn.textContent = color.name;
+    btn.onclick = () => {
+      if (!currentlySelectedItem) return;
+      setItemNamedColor(currentlySelectedItem, color.name);
+      hideColorPicker();
+    };
+    grid.appendChild(btn);
+  });
+  container.appendChild(grid);
+
+  const close = document.createElement('button');
+  close.textContent = 'Close';
+  close.classList.add('close-color-picker');
+  close.onclick = hideColorPicker;
+  container.appendChild(close);
+
+  const host = document.querySelector('.controls') || document.body;
+  host.appendChild(container);
+}
+
+function ensureColorPicker() {
+  if (!document.querySelector('.color-picker-container')) createColorPicker();
+}
+
+function showColorPicker(itemId) {
+  currentlySelectedItem = itemId;
+  ensureColorPicker();
+  const el = document.querySelector('.color-picker-container');
+  if (el) el.style.display = 'block';
+}
+
+function hideColorPicker() {
+  const el = document.querySelector('.color-picker-container');
+  if (el) el.style.display = 'none';
+  currentlySelectedItem = null;
+}
+
+// Make sure it exists early (prevents null.style errors)
+document.addEventListener('DOMContentLoaded', ensureColorPicker);
 
 // ===== COLOR PICKER =====
 function createColorPicker() {
@@ -269,7 +501,7 @@ function applyColorToItem(filterValue) {
 // ===== LOAD ITEMS =====
 // Load items in batches to reduce load time and improve responsiveness
 
-async function loadItemsInBatches(batchSize = 50, delay = 1000) {
+async function loadItemsInBatches(batchSize = 50, delay = 1) {
 	const baseContainer = document.querySelector('.base-container');
 	const controlsContainer = document.querySelector('.controls');
 
@@ -594,13 +826,3 @@ function handleVirtualScroll() {
 	}, 50);
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-	console.log("🚀 Super-Stable Virtual Loader with Safe Reentry");
-
-	if (Array.isArray(jsonFiles) && jsonFiles.length > 0) {
-		initVirtualizedItems(jsonFiles);
-		window.addEventListener("scroll", handleVirtualScroll, { passive: true });
-	} else {
-		console.error("❌ jsonFiles not found or empty — Virtual loader not initialized.");
-	}
-});
